@@ -11,6 +11,7 @@ from datetime import datetime
 from toolkit.util.cache_text import cache_text_embeddings
 from toolkit.util.cache_vae import cache_vae_outputs
 from toolkit.util.memory import reclaim_memory
+from toolkit.data_transfer_object.data_loader import FlatPromptImageDataset
 
 process_dict = {
     'vae': 'TrainVAEProcess',
@@ -43,18 +44,15 @@ class TrainJob(BaseJob):
         if self.config.get("cache_preprocessing", True):
             try:
                 process = self.process[0]  # Assume first process has the dataset, encoders, etc.
-                if hasattr(process, "train_dataset") and hasattr(process, "text_encoder") and hasattr(process, "vae"):
-                    dataset = process.train_dataset
-                    text_encoder = process.text_encoder
-                    tokenizer = process.tokenizer
-                    vae = process.vae
+                if hasattr(process, "train_dataloader") and hasattr(process, "text_encoder") and hasattr(process, "vae"):
+                    flat_dataset = FlatPromptImageDataset(process.train_dataloader.file_items)
 
                     # Cache text encoder embeddings
-                    print("📝 Caching text embeddings...")
+                    print("\U0001F4DD Caching text embeddings...")
                     cache_text_embeddings(
-                        text_encoder=text_encoder,
-                        tokenizer=tokenizer,
-                        prompts=dataset.get_all_prompts(),
+                        text_encoder=process.text_encoder,
+                        tokenizer=process.tokenizer,
+                        prompts=flat_dataset.get_all_prompts(),
                         output_dir=self.config["text_cache_dir"],
                         batch_size=16,
                         device=self.device,
@@ -63,10 +61,10 @@ class TrainJob(BaseJob):
                     reclaim_memory()
 
                     # Cache VAE latents
-                    print("🖼️ Caching VAE latents...")
+                    print("\U0001F5BC️ Caching VAE latents...")
                     cache_vae_outputs(
-                        vae=vae,
-                        dataset=dataset,
+                        vae=process.vae,
+                        dataset=flat_dataset,
                         output_dir=self.config["vae_cache_dir"],
                         batch_size=4,
                         device=self.device,
