@@ -8,6 +8,9 @@
 
 ---
 job: extension
+cache_preprocessing: true
+text_cache_dir: cached/text
+vae_cache_dir: cached/vae
 config:
   # this name will be the folder and filename name
   name: "my_first_hidream_lora_v1"
@@ -78,8 +81,8 @@ config:
         extras_name_or_path: "HiDream-ai/HiDream-I1-Full"
         arch: "hidream"
         # both need to be quantized to train on 48GB currently
-        quantize: true
-        quantize_te: true
+        quantize: false
+        quantize_te: false
         model_kwargs:
           # llama is a gated model, It defaults to unsloth version, but you can set the llama path here
           llama_model_path: "unsloth/Meta-Llama-3.1-8B-Instruct"
